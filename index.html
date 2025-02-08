@@ -111,7 +111,7 @@ function fixUrl(url) {
 }
 
 const urlParams = new URLSearchParams(location.search);
-const initialUrl = fixUrl(urlParams.get('url'));
+const sqliteUrl = fixUrl(urlParams.get('url'));
 const memory = !!urlParams.get('memory');
 const metadataUrl = fixUrl(urlParams.get('metadata'));
 const csvUrls = urlParams.getAll('csv').map(fixUrl);
