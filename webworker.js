@@ -204,7 +204,7 @@ async function startDatasette(settings) {
                   db[bit].transform(drop=set([d.strip() for d in drop_cols.split(",")]))
     from datasette.app import Datasette
     ds = Datasette(names, settings={
-        "num_sql_threads": 0, "truncate_cells_html": 100
+        "num_sql_threads": 0, "truncate_cells_html": 500
     }, metadata=metadata, template_dir="templates", plugins_dir="plugins", memory=${settings.memory ? 'True' : 'False'})
     await ds.invoke_startup()
     `);

@@ -153,7 +153,7 @@ canned_query|to_css_class }}{% endif %}{% endblock %} {% block nav %}
         {% set values = dict(zip(columns, row)) %}
         <tr><td>
         <h4 class="title is-size-5 mb-2 has-text-weight-light">{% if values.issue_details[0:5].lower() != "issue"%}Issue {% endif %}{{values.issue_details}}, page {{values.page_number}}</h4>
-        <p class="is-size-6 mb-2">{{values.snippet|safe}}<br><a class="is-size-7" href="pages/{{values.issue_id}},{{values.page_number}}">[expand]</a></p>
+        <p class="is-size-6 mb-2">{{values.snippet|safe}}<br><a class="is-size-7" href="/{database}/pages/{{values.issue_id}},{{values.page_number}}">[expand]</a></p>
 
         </td><td><a class="button is-small is-link is-light" href="https://nla.gov.au/{{ values.issue_id}}/view#page={{values.page_number}}">View in Trove</a>
         </td></tr>
@@ -165,7 +165,7 @@ canned_query|to_css_class }}{% endif %}{% endblock %} {% block nav %}
         <h4 class="title is-size-5">Filter by year</h4>
         <ul>
             {% for facet in facets %}
-            <li>{{facet.value}}: <a href="search?query={{query.params.query}}&start_date={{facet.value}}&end_date={{facet.value}}">{{facet.count}} results</a></li>
+            <li>{{facet.value}}: <a href="/{database}/search?query={{query.params.query}}&start_date={{facet.value}}&end_date={{facet.value}}">{{facet.count}} results</a></li>
             {% endfor %}
         </ul>
         {% endif %}
