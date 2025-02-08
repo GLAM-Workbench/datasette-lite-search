@@ -33,15 +33,25 @@ block content %}
     </div>
 </div>
 
-{% endif %} {% block description_source_license %}{% include
-"_description_source_license.html" %}{% endblock %} {% for database in databases
-%}
+{% endif %} 
+{% block description_source_license %}{% include "_description_source_license.html" %}{% endblock %} 
+{% for database in databases %}
+{% set db = metadata["databases"][database.name] %}
+{% if db.queries.search %}
 <h2
-    class="title is-4 mt-5 mb-1"
+    class="title is-3 mt-5 mb-1 has-text-weight-medium"
     style="padding-left: 0.5rem; border-left: 0.5rem solid #{{ database.color }}"
 >
-    <a href="{{ urls.database(database.name) }}">{{ database.name }}</a>{% if
-    database.private %} 🔒{% endif %}
+<a href="/{{database.name}}/search">{{db.queries.search.title}}</a>
+</h2>
+<h3 class="subtitle pl-4 mb-1">{{db.queries.search.description}}</h3>
+{% else %}
+<h2
+    class="title is-3 mt-5 mb-1 has-text-weight-medium"
+    style="padding-left: 0.5rem; border-left: 0.5rem solid #{{ database.color }}"
+>
+    <a href="{{ urls.database(database.name) }}">{{ db.title or database.name }}</a>
+    {% if database.private %} 🔒{% endif %}
 </h2>
 <h3 class="subtitle pl-4 mb-1">
     {% if database.show_table_row_counts %}{{
@@ -58,20 +68,6 @@ block content %}
     "{:,}".format(database.views_count) }} view{% if database.views_count != 1
     %}s{% endif %} {% endif %}
 </h3>
-<p class="pl-4">
-    {% for table in database.tables_and_views_truncated %}<a
-        href="{{ urls.table(database.name, table.name) }}"
-        {%
-        if
-        table.count
-        %}
-        title="{{ table.count }} rows"
-        {%
-        endif
-        %}
-        >{{ table.name }}</a
-    >{% if table.private %} 🔒{% endif %}{% if not loop.last %}, {% endif %}{%
-    endfor %}{% if database.tables_and_views_more %},
-    <a href="{{ urls.database(database.name) }}">...</a>{% endif %}
-</p>
+{% endif %}
+
 {% endfor %} {% endblock %}

@@ -50,7 +50,8 @@ block body_class %}db db-{{ database|to_css_class }}{% endblock %} {% block nav
     </details>
     {% endif %}
 </div>
-
+{% block description_source_license %}{% include
+    "_description_source_license.html" %}{% endblock %}
 {% if allow_execute_sql %}
 <h3 class="subtitle mt-4 mb-4 is-4">Custom SQL query</h3>
 <form class="sql mb-2" action="{{ urls.database(database) }}" method="get">
@@ -99,9 +100,11 @@ block body_class %}db db-{{ database|to_css_class }}{% endblock %} {% block nav
         {% endfor %}
     </ul>
 </div>
-{% endif %} {% for table in tables %} {% if show_hidden or not table.hidden %}
-<div class="db-table">
-    <h3 class="title is-4 mt-4 mb-1">
+{% endif %} 
+<h2 class="title is-3 has-text-weight-medium mt-4 mb-2" id="tables">Tables</h2>
+{% for table in tables %} {% if show_hidden or not table.hidden %}
+<div class="db-table ml-4">
+    <h3 class="title is-4 mb-1">
         <a href="{{ urls.table(database, table.name) }}">{{ table.name }}</a>{%
         if table.private %} 🔒{% endif %}{% if table.hidden %}<em> (hidden)</em
         >{% endif %}
@@ -117,17 +120,18 @@ block body_class %}db db-{{ database|to_css_class }}{% endblock %} {% block nav
             %}, {% endif %}{% endfor %}</em
         >
     </p>
-</div>
+
 {% endif %} {% endfor %} {% if hidden_count and not show_hidden %}
-<p>
+<p class="mt-2">
     ... and
     <a href="{{ urls.database(database) }}?_show_hidden=1"
         >{{ "{:,}".format(hidden_count) }} hidden table{% if hidden_count == 1
         %}{% else %}s{% endif %}</a
     >
 </p>
+</div>
 {% endif %} {% if views %}
-<h2 class="title" id="views">Views</h2>
+<h2 class="title is-3 has-text-weight-medium mt-4 mb-2" id="views">Views</h2>
 <ul class="bullets">
     {% for view in views %}
     <li>
@@ -138,18 +142,18 @@ block body_class %}db db-{{ database|to_css_class }}{% endblock %} {% block nav
     {% endfor %}
 </ul>
 {% endif %} {% if queries %}
-<h2 id="queries">Queries</h2>
-<ul class="bullets">
+<h2 class="title is-3 has-text-weight-medium mt-4 mb-2" id="queries">Queries</h2>
+<div class="db-table ml-4">
     {% for query in queries %}
-    <li>
-        <a
+
+        <h3 class="title is-4 mb-1"><a
             href="{{ urls.query(database, query.name) }}{% if query.fragment %}#{{ query.fragment }}{% endif %}"
             title="{{ query.description or query.sql }}"
             >{{ query.title or query.name }}</a
-        >{% if query.private %} 🔒{% endif %}
-    </li>
+        >{% if query.private %} 🔒{% endif %}</h3>
+
     {% endfor %}
-</ul>
+</div>
 {% endif %} {% if allow_download %}
 <p class="download-sqlite mt4">
     Download SQLite DB:
