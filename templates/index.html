@@ -1,0 +1,77 @@
+{% extends "base.html" %} {% block title %}{{ metadata.title or "Datasette" }}:
+{% for database in databases %}{{ database.name }}{% if not loop.last %}, {%
+endif %}{% endfor %}{% endblock %} {% block body_class %}index{% endblock %} {%
+block content %}
+<h1 class="title is-1 mt-4 has-text-weight-medium">
+    {{ metadata.title or "Datasette" }}{% if private %} 🔒{% endif %}
+</h1>
+
+{% if searchable_tables %}
+<div class="columns">
+    <div class="column is-half">
+        <form action='{{ urls.path("/-/search") }}' method="get">
+            <div class="field is-grouped">
+                <div class="control is-expanded">
+                    <input
+                        class="input"
+                        type="search"
+                        name="q"
+                        value="{{ q }}"
+                        placeholder="Search for records across {{ searchable_tables|length }} volume{% if searchable_tables|length > 1 %}s{% endif %}"
+                        id="search-all-q"
+                    />
+                </div>
+                <div class="control">
+                    <input
+                        class="button is-link"
+                        type="submit"
+                        value="Search"
+                    />
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endif %} {% block description_source_license %}{% include
+"_description_source_license.html" %}{% endblock %} {% for database in databases
+%}
+<h2
+    class="title is-4 mt-5 mb-1"
+    style="padding-left: 0.5rem; border-left: 0.5rem solid #{{ database.color }}"
+>
+    <a href="{{ urls.database(database.name) }}">{{ database.name }}</a>{% if
+    database.private %} 🔒{% endif %}
+</h2>
+<h3 class="subtitle pl-4 mb-1">
+    {% if database.show_table_row_counts %}{{
+    "{:,}".format(database.table_rows_sum) }} rows in {% endif %}{{
+    database.tables_count }} table{% if database.tables_count != 1 %}s{% endif
+    %}{% if database.tables_count and database.hidden_tables_count %}, {% endif
+    -%} {% if database.hidden_tables_count -%} {% if
+    database.show_table_row_counts %}{{
+    "{:,}".format(database.hidden_table_rows_sum) }} rows in {% endif %}{{
+    database.hidden_tables_count }} hidden table{% if
+    database.hidden_tables_count != 1 %}s{% endif -%} {% endif -%} {% if
+    database.views_count -%} {% if database.tables_count or
+    database.hidden_tables_count %}, {% endif -%} {{
+    "{:,}".format(database.views_count) }} view{% if database.views_count != 1
+    %}s{% endif %} {% endif %}
+</h3>
+<p class="pl-4">
+    {% for table in database.tables_and_views_truncated %}<a
+        href="{{ urls.table(database.name, table.name) }}"
+        {%
+        if
+        table.count
+        %}
+        title="{{ table.count }} rows"
+        {%
+        endif
+        %}
+        >{{ table.name }}</a
+    >{% if table.private %} 🔒{% endif %}{% if not loop.last %}, {% endif %}{%
+    endfor %}{% if database.tables_and_views_more %},
+    <a href="{{ urls.database(database.name) }}">...</a>{% endif %}
+</p>
+{% endfor %} {% endblock %}

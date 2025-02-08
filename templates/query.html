@@ -1,0 +1,195 @@
+{% extends "base.html" %} {% block title %}{{ database }}{% if query and
+query.sql %}: {{ query.sql }}{% endif %}{% endblock %} {% block extra_head %} {{
+super() }} {% include "_codemirror.html" %} {% endblock %} {% block body_class
+%}query db-{{ database|to_css_class }}{% if canned_query %} query-{{
+canned_query|to_css_class }}{% endif %}{% endblock %} {% block nav %}
+<ul>
+    <li><a href="{{ urls.instance() }}">home</a></li>
+    <li><a href="{{ urls.database(database) }}">{{ database }}</a></li>
+</ul>
+{{ super() }} {% endblock %} {% block content %}
+
+<h1
+    class="title is-1 mt-4 has-text-weight-medium"
+    style="padding-left: 0.5rem; border-left: 0.5rem solid #{{ database_color(database) }}"
+>
+    {{ metadata.title or database }}{% if canned_query and not metadata.title
+    %}: {{ canned_query }}{% endif %}{% if private %} 🔒{% endif %}
+</h1>
+
+{% block description_source_license %}{% include
+"_description_source_license.html" %}{% endblock %}
+{% if canned_query %}
+<h2 class="subtitle mt-4 mb-2 is-3">
+    {% if display_rows %}{% if truncated %}more than
+    {% endif %}{{ "{:,}".format(display_rows|length) }} result{% if
+    display_rows|length == 1 %}{% else %}s{% endif %}{% endif %}</h2>
+{% else %}
+{{filtered_table_rows_count}}
+<h2 class="subtitle mt-4 mb-2 is-3">
+    Custom SQL query{% if display_rows %} returning {% if truncated %}more than
+    {% endif %}{{ "{:,}".format(display_rows|length) }} row{% if
+    display_rows|length == 1 %}{% else %}s{% endif %}{% endif %}{% if not
+    query_error %}
+    <span class="show-hide-sql"
+        >(<a href="{{ show_hide_link }}">{{ show_hide_text }}</a>)</span
+    >
+    {% endif %}
+</h2>
+{% endif %}
+
+<form
+    class="sql mb-4"
+    action="{{ urls.database(database) }}{% if canned_query %}/{{ canned_query }}{% endif %}"
+    method="{% if canned_write %}post{% else %}get{% endif %}"
+>
+    {% if error and not canned_query %}
+    <p class="message-error">{{ error }}</p>
+    {% endif %} {% if not hide_sql %}
+    <div class="field">
+        {% if editable and allow_execute_sql %}
+        <div class="control">
+            <textarea id="sql-editor" name="sql">
+{% if query and query.sql %}{{ query.sql }}{% else %}select * from {{ tables[0].name|escape_sqlite }}{% endif %}</textarea
+            >
+        </div>
+        {% else %}
+        <pre id="sql-query">{% if query %}{{ query.sql }}{% endif %}</pre>
+        {% endif %}
+    </div>
+    {% else %} {% if not canned_query %}
+    <input
+        type="hidden"
+        name="sql"
+        value="{% if query and query.sql %}{{ query.sql }}{% else %}select * from {{ tables[0].name|escape_sqlite }}{% endif %}"
+    />
+    {% endif %} {% endif %} 
+    {% if named_parameter_values %}
+    <div class="columns">
+        <div class="column is-half">
+    {% for name, value in named_parameter_values.items() %}
+    <div class="field">
+        {% if name == "start_date" %}
+        <input 
+            type="hidden"
+            id="qp{{ loop.index }}"
+            name="{{ name }}"
+            value="{%if value %}{{value}}{% else %}0{% endif %}"
+        />
+        {% elif name == "end_date" %}
+        <input
+            type="hidden"
+            id="qp{{ loop.index }}"
+            name="{{ name }}"
+            value="{%if value %}{{value}}{% else %}3000{% endif %}"
+        />
+        {% else %}
+        <label class="label" for="qp{{ loop.index }}">{{ name }}</label>
+        <div class="control">
+            <input
+                class="input" 
+                type="text"
+                id="qp{{ loop.index }}"
+                name="{{ name }}"
+                value="{{value}}",
+            />
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %} {% endif %}
+    <div class="field is-grouped">
+        {% if not hide_sql and not canned_query %}
+        <div class="control">
+            <button
+                class="button is-small"
+                id="sql-format"
+                type="button"
+                hidden
+            >
+                Format SQL
+            </button>
+        </div>
+
+        {% endif %} {% if canned_write %}<input
+            type="hidden"
+            name="csrftoken"
+            value="{{ csrftoken() }}"
+        />{% endif %}
+        <div class="control">
+            <input
+                class="button is-link"
+                type="submit"
+                value="{%if canned_query %}search{% else %}Run SQL{% endif %}"
+            />
+        </div>
+        {{ show_hide_hidden }} 
+        {% if not canned_query and edit_sql_url %}<a
+            href="{{ edit_sql_url }}"
+            class="canned-query-edit-sql"
+            >Edit SQL</a
+        >{% endif %}
+    </div>
+</div>
+</div>
+</form>
+
+{% if display_rows and canned_query %}
+{% set facets = sql("select issue_date as value, count(*) as count from (select issue_id, issue_details, issue_date, page_number, snippet(pages_fts, -1, '<b>', '</b>', '...', 50) as snippet, bm25(pages_fts) AS rank from pages join pages_fts on pages.rowid=pages_fts.rowid where pages_fts match :query AND issue_date >= :start_date AND issue_date <= :end_date) where issue_date is not null group by issue_date order by count desc", query.params) %}
+{% endif %}
+
+
+
+{% if display_rows %}
+<p class="export-links mb-4 is-size-7">
+    This data as {% for name, url in renderers.items() %}<a href="{{ url }}"
+        >{{ name }}</a
+    >{{ ", " if not loop.last }}{% endfor %}, <a href="{{ url_csv }}">CSV</a>
+</p>
+{% if canned_query %}
+<div class="columns">
+    <div class="column is-two-thirds">
+        <table class="table is-hoverable">
+        {% for row in display_rows %}
+        {% set values = dict(zip(columns, row)) %}
+        <tr><td>
+        <h4 class="title is-size-5 mb-2 has-text-weight-light">{% if values.issue_details[0:5].lower() != "issue"%}Issue {% endif %}{{values.issue_details}}, page {{values.page_number}}</h4>
+        <p class="is-size-6 mb-2">{{values.snippet|safe}}<br><a class="is-size-7" href="pages/{{values.issue_id}},{{values.page_number}}">[expand]</a></p>
+
+        </td><td><a class="button is-small is-link is-light" href="https://nla.gov.au/{{ values.issue_id}}/view#page={{values.page_number}}">View in Trove</a>
+        </td></tr>
+        {% endfor %}
+        </table>
+    </div>
+    <div class="column is-offset-1">
+        {% if facets %}
+        <h4 class="title is-size-5">Filter by year</h4>
+        <ul>
+            {% for facet in facets %}
+            <li>{{facet.value}}: <a href="search?query={{query.params.query}}&start_date={{facet.value}}&end_date={{facet.value}}">{{facet.count}} results</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+</div>
+{% elif not canned_query %}
+<div class="table-wrapper"><table class="table is-fullwidth is-bordered is-striped is-hoverable rows-and-columns">
+    <thead>
+        <tr>
+            {% for column in columns %}<th class="col-{{ column|to_css_class }}" scope="col">{{ column }}</th>{% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in display_rows %}
+        <tr>
+            {% for column, td in zip(columns, row) %}
+                <td class="col-{{ column|to_css_class }}">{{ td }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table></div>
+{% else %}
+    {% if not canned_write and not error %}
+        <p class="zero-results">0 results</p>
+    {% endif %}
+{% endif %} {% endif %} {% include "_codemirror_foot.html" %} {% endblock %}

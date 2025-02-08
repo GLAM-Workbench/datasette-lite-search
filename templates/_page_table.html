@@ -1,0 +1,84 @@
+{% if display_rows %} {% set rows = sql("select * from [v" + volume.0.year + "]
+where page_id = :page_id", {"page_id": page_id}) %} {% set num_rows =
+rows|length %}
+
+<nav class="pagination is-centered" role="navigation" aria-label="pagination">
+    {% if previous_page %}
+    <a
+        class="pagination-previous"
+        href="/tasmanian-post-office-directories/pages/{{previous_page.page_id}}"
+        >< Prev</a
+    >
+    {% else %}
+    <a class="pagination-previous is-disabled">< Prev</a>
+    {% endif %} {% if next_page %}
+    <a
+        class="pagination-next"
+        href="/tasmanian-post-office-directories/pages/{{next_page.page_id}}"
+        >Next ></a
+    >
+    {% else %}
+    <a class="pagination-next is-disabled">Next ></a>
+    {% endif %}
+</nav>
+
+<div class="columns">
+    <div class="column">
+        <div class="table-wrapper table-container">
+            <table
+                class="table is-fullwidth is-bordered is-striped is-hoverable is-narrow rows-and-columns"
+            >
+                <tbody>
+                    <tr>
+                        <th>line</th>
+                        <th>text</th>
+                    </tr>
+                    {% for row in rows %}
+                    <tr>
+                        <td>
+                            <a
+                                href="/tasmanian-post-office-directories/{{ volume.0.year }}/{{page}},{{row.line}}"
+                                >{{ row.line }}</a
+                            >
+                        </td>
+                        <td>{{ row.text }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="zero-results">0 records</p>
+        {% endif %}
+    </div>
+    <div class="column">
+        <div id="openseadragon1" class="box">
+            <script src="/static/openseadragon.min.js"></script>
+            <script type="text/javascript">
+                var viewer = OpenSeadragon({
+                    id: "openseadragon1",
+                    prefixUrl: "/static/images/",
+                    visibilityRatio: 0.01,
+                    tileSources: [
+                        "https://m6mq23u5ipveatowihutcbnph40eadkk.lambda-url.ap-southeast-2.on.aws/iiif/2/{{page_id}}/info.json",
+                    ],
+                });
+                // Position image at top of viewer
+
+                viewer.addHandler("open", function () {
+                    var oldBounds = viewer.viewport.getBounds();
+                    //console.log(oldBounds);
+                    var newBounds = new OpenSeadragon.Rect(
+                        0,
+                        0,
+                        1,
+                        oldBounds.height / oldBounds.width,
+                    );
+                    //console.log(newBounds);
+                    viewer.viewport.fitBounds(newBounds, true);
+                    //viewer.viewport.fitBounds(viewportRect, false);
+                });
+            </script>
+        </div>
+    </div>
+</div>

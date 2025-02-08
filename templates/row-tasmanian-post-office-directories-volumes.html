@@ -1,0 +1,37 @@
+{% extends "base.html" %} {% block title %}{{ database }}: {{ table }}{%
+endblock %} {% block extra_head %} {{ super() }} {% endblock %} {% block
+body_class %}row db-{{ database|to_css_class }} table-{{ table|to_css_class }}{%
+endblock %} {% block nav %}
+{% block crumbs %}
+    {{ crumbs.nav(request=request, database=database, table=table) }}
+{% endblock %}
+{{ super() }} {% endblock %} {% block content %}
+
+<h1
+    class="title is-1 mt-4 has-text-weight-medium"
+    style="padding-left: 10px; border-left: 10px solid #{{ database_color(database) }}"
+>
+    {{ display_rows.0.year }}
+</h1>
+
+<p class="mb-4">
+    This data as {% for name, url in renderers.items() %}<a href="{{ url }}"
+        >{{ name }}</a
+    >{{ ", " if not loop.last }}{% endfor %}
+</p>
+
+<!-- {% include custom_table_templates %} -->
+{% include "_vertical_table.html" %}
+
+<a
+    href="/tasmanian-post-office-directories/pages?_sort=page&vol_id__exact={{display_rows.0.vol_id}}"
+    class="button is-link"
+    >List pages in volume</a
+>
+<a
+    href="https://stors.tas.gov.au/{{display_rows.0.vol_id}}"
+    class="button is-link"
+    >Open volume in Libraries Tasmania</a
+>
+
+{% endblock %}

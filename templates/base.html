@@ -1,0 +1,93 @@
+{% import "_crumbs.html" as crumbs with context %}<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="/static/app.css?{{ app_css_hash }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{% for url in extra_css_urls %}
+    <link rel="stylesheet" href="{{ url.url }}"{% if url.sri %} integrity="{{ url.sri }}" crossorigin="anonymous"{% endif %}>
+{% endfor %}
+{% for url in extra_js_urls %}
+    <script {% if url.module %}type="module" {% endif %}src="{{ url.url }}"{% if url.sri %} integrity="{{ url.sri }}" crossorigin="anonymous"{% endif %}></script>
+{% endfor %}
+{%- if alternate_url_json -%}
+    <link rel="alternate" type="application/json+datasette" href="{{ alternate_url_json }}">
+{%- endif -%}
+{%- block extra_head %}{% endblock -%}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<div class="not-footer">
+<header>
+    <nav class="navbar is-link" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-brand">
+                {% set links = menu_links() %}
+                <div class="navbar-item">
+                    <span class="icon logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m13.78 15.3 6 6 2.11-2.16-6-6-2.11 2.16m3.72-5.2c-.39 0-.81-.05-1.14-.19L4.97 21.25l-2.11-2.11 7.41-7.4L8.5 9.96l-.72.7-1.45-1.41v2.86l-.7.7-3.52-3.56.7-.7h2.81l-1.4-1.41 3.56-3.56a2.976 2.976 0 0 1 4.22 0L9.89 5.74l1.41 1.4-.71.71 1.79 1.78 1.82-1.88c-.14-.33-.2-.75-.2-1.12a3.49 3.49 0 0 1 3.5-3.52c.59 0 1.11.14 1.58.42L16.41 6.2l1.5 1.5 2.67-2.67c.28.47.42.97.42 1.6 0 1.92-1.55 3.47-3.5 3.47z"/></svg></span> <span class="pl-1 has-text-weight-bold">GLAM Workbench</span>
+                </div>
+                {% if links %}
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+                {% endif %}
+            </div>
+            <div class="navbar-menu">
+                <div class="navbar-end">
+                {% if actor %}
+                <div class="actor navbar-item">
+                    <strong>{{ display_actor(actor) }}</strong>
+                </div>
+                {% endif %}
+                {% if show_logout %}
+                <div class="navbar-item">
+                    <form action="{{ urls.logout() }}" method="post">
+                        <input type="hidden" name="csrftoken" value="{{ csrftoken() }}">
+                        <button class="button-as-link">Log out</button>
+                    </form>
+                </div>
+                {% endif %}
+                {% for link in links %}
+                    <a class="navbar-item" href="{{ link.href }}">{{ link.label }}</a>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <nav class="breadcrumb mt-2 mb-2 is-left">
+            {% block crumbs %}
+            {{ crumbs.nav(request=request, database=database) }}
+            {% endblock %}
+        </nav>
+    </div>
+</header>
+
+{% block messages %}
+{% if show_messages %}
+    {% for message, message_type in show_messages() %}
+        <p class="message-{% if message_type == 1 %}info{% elif message_type == 2 %}warning{% elif message_type == 3 %}error{% endif %}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+{% endblock %}
+
+<section>
+<div class="container">
+{% block content %}
+{% endblock %}
+</div>
+</section>
+</div>
+<footer class="footer ft mt-6 is-size-7">{% block footer %}{% include "_footer.html" %}{% endblock %}</footer>
+
+{% include "_close_open_menus.html" %}
+
+{% for body_script in body_scripts %}
+    <script{% if body_script.module %} type="module"{% endif %}>{{ body_script.script }}</script>
+{% endfor %}
+
+{% if select_templates %}<!-- Templates considered: {{ select_templates|join(", ") }} -->{% endif %}
+</body>
+</html>

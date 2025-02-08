@@ -1,0 +1,18 @@
+{% if display_rows %}
+<div class="table-wrapper table-container">
+    <table class="table is-fullwidth is-bordered is-striped is-hoverable is-narrow rows-and-columns">
+        <tbody>
+        {% for row in display_rows %}
+            {% for cell in row %}
+            <tr>
+                <th>{{ cell.column }}</th>
+                <td class="col-{{ cell.column|to_css_class }}">{{ row.display(cell.column) }}</td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <p class="zero-results">0 records</p>
+{% endif %}

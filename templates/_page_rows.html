@@ -1,0 +1,57 @@
+{% if display_rows %}
+{% set page_data = sql("select * from pages where page_id = :page_id", {"page_id": page_id}) %}
+{% set rows = sql("select * from [" + table + "] where page_id = :page_id order by line", {"page_id": page_id}) %}
+{% set num_rows = rows|length %}
+{% set offset = rows.0.line|int %}
+{% set start = [0, line - (5 + offset)]|max %}
+{% set end = [num_rows, line + (6 - offset)]|min %}
+
+<div class="columns">
+    <div class="column">
+        <div class="table-wrapper table-container">
+            <table class="table is-fullwidth is-bordered is-striped is-hoverable is-narrow rows-and-columns">
+                <tbody>
+                    <tr><th>page</th><th>line</th><th>text</th></tr>
+                    {% for row in rows[start:end] %}
+
+                        {% if row.line == line %}
+                            <tr class="highlight"><td>{{ row.page }}</td><td>{{ row.line }}</td><td>{{ row.text }}</td></tr>
+                        {% else %}
+                            <tr><td>{{ row.page }}</td><td>{{ row.line }}</td><td>{{ row.text }}</td></tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p class="zero-results">0 records</p>
+        {% endif %}
+        <a href="/tasmanian-post-office-directories/pages/{{page_data.0.page_id}}" class="button is-link">View full page</a>
+    </div>
+    <div class="column">
+        <div id="openseadragon1" class="box">
+            <script src="/static/openseadragon.min.js"></script>
+            <script type="text/javascript">
+                var viewer = OpenSeadragon({
+                    id: "openseadragon1",
+                    prefixUrl: "/static/images/",
+                    visibilityRatio: 0.01,
+                    tileSources: ["https://m6mq23u5ipveatowihutcbnph40eadkk.lambda-url.ap-southeast-2.on.aws/iiif/2/{{page_id}}/info.json"]
+                        //url: "https://cloudstor.aarnet.edu.au/plus/s/9XN0h9ro6RB3o7D/download?path=AU+NBAC+N193-001/columns/N193-001_0001-col-1.jpg"
+                });
+                // Position image at top of viewer
+
+                viewer.addHandler('open', function()
+                {
+                    var oldBounds = viewer.viewport.getBounds();
+                    //console.log(oldBounds);
+                    var newBounds = new OpenSeadragon.Rect(0, 0, 1, oldBounds.height / oldBounds.width);
+                    //console.log(newBounds);
+                    viewer.viewport.fitBounds(newBounds, true);
+                    //viewer.viewport.fitBounds(viewportRect, false);
+                });
+
+            </script>
+        </div>
+    </div>
+</div>

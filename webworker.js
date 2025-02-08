@@ -50,6 +50,12 @@ async function startDatasette(settings) {
   await pyodide.loadPackage('micropip', {messageCallback: log});
   await pyodide.loadPackage('ssl', {messageCallback: log});
   await pyodide.loadPackage('setuptools', {messageCallback: log}); // For pkg_resources
+  let templateResponse = await fetch("templates.zip");
+  let templateBinary = await templateResponse.arrayBuffer();
+  pyodide.unpackArchive(templateBinary, "zip");
+  let pluginResponse = await fetch("plugins.zip");
+  let pluginBinary = await pluginResponse.arrayBuffer();
+  pyodide.unpackArchive(pluginBinary, "zip");
   try {
     await self.pyodide.runPythonAsync(`
     # https://github.com/pyodide/pyodide/issues/3880#issuecomment-1560130092
@@ -105,13 +111,14 @@ async function startDatasette(settings) {
         "about": "Datasette Lite",
         "about_url": "https://github.com/simonw/datasette-lite"
     }
-    metadata_url = ${JSON.stringify(settings.metadataUrl || '')}
+    metadata_url = ${JSON.stringify(settings.metadataUrl || 'metadata.json')}
     if metadata_url:
         response = await pyfetch(metadata_url)
         content = await response.string()
         from datasette.utils import parse_metadata
         metadata = parse_metadata(content)
-
+    about_url = ${JSON.stringify(settings.aboutUrl || "")}
+    print(about_url)
     # Import data from ?csv=URL CSV files/?json=URL JSON files
     sources = ${JSON.stringify(sources.filter(source => ['csv', 'json', 'parquet'].includes(source[0])))}
     if sources:
@@ -133,7 +140,12 @@ async function startDatasette(settings) {
                     prefix += 1
                     bit = "{}_{}".format(base_bit, prefix)
                 table_names.add(bit)
-
+                metadata["databases"]["data"]["tables"][bit] = {"searchmode": "raw", "source_url": url, "about_url": about_url}
+                metadata_plugins = metadata.get("plugins", {})
+                if not "datasette-homepage-table" in metadata_plugins:
+                  metadata_plugins["datasette-homepage-table"] = {"table": bit}
+                metadata["plugins"] = metadata_plugins
+                print(metadata)
                 if source_type == "csv":
                     tracker = TypeTracker()
                     response = await pyfetch(url)
@@ -179,10 +191,21 @@ async function startDatasette(settings) {
                         fp.write(await response.bytes())
                     df = fastparquet.ParquetFile("parquet.parquet").to_pandas()
                     df.to_sql(bit, db.conn, if_exists="replace")
+                fts_cols = ${JSON.stringify(settings.ftsCols || "")}
+                if fts_cols:
+                  for fts_col in fts_cols.split(","):
+                    try:
+                      db[bit].enable_fts([fts_col.strip()])
+                    except sqlite3.OperationalError:
+                      print("Column not found")
+                      pass
+                drop_cols = ${JSON.stringify(settings.dropCols || "")}
+                if drop_cols:
+                  db[bit].transform(drop=set([d.strip() for d in drop_cols.split(",")]))
     from datasette.app import Datasette
     ds = Datasette(names, settings={
-        "num_sql_threads": 0,
-    }, metadata=metadata, memory=${settings.memory ? 'True' : 'False'})
+        "num_sql_threads": 0, "truncate_cells_html": 100
+    }, metadata=metadata, template_dir="templates", plugins_dir="plugins", memory=${settings.memory ? 'True' : 'False'})
     await ds.invoke_startup()
     `);
     datasetteLiteReady();
