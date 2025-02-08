@@ -124,7 +124,7 @@ const ftsCols = urlParams.get('fts');
 const dropCols = urlParams.get('drop');
 const aboutUrl = urlParams.get('about');
 
-datasetteWorker.postMessage({type: 'startup', ref, initialUrl, memory, csvUrls, sqlUrls, jsonUrls, parquetUrls, installUrls, metadataUrl, ftsCols, dropCols, aboutUrl});
+datasetteWorker.postMessage({type: 'startup', ref, sqliteUrl, memory, csvUrls, sqlUrls, jsonUrls, parquetUrls, installUrls, metadataUrl, ftsCols, dropCols, aboutUrl});
 
 let loadingLogs = ["Loading..."];
 
