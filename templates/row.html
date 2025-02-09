@@ -3,6 +3,12 @@
 {% set issue = display_rows.0.issue_details %}
 {% set issue_id = display_rows.0.issue_id %}
 {% set text = display_rows.0.text %}
+{% set query = request.args.query %}
+{% if query %}
+{% set highlighted_sql = sql("select issue_id, page_number, highlight(pages_fts, 0, '<span class=\"has-text-warning\">', '</span>') as highlighted  from pages join pages_fts on pages.rowid=pages_fts.rowid where pages_fts match :query AND issue_id = :issue_id AND page_number = :page", {"query": query, "issue_id": issue_id, "page": page}) %}
+{% set highlighted_text = highlighted_sql.0.highlighted %}
+{% endif %}
+
 {% block title %}{{ database }}: {{ table }}{%
 endblock %} 
 {% block body_class %}row db-{{ database|to_css_class }} table-{{
@@ -19,7 +25,6 @@ table|to_css_class }}{% endblock %}
 >
     {{ database }}: {{issue}}, page {{ page }}
 </h1>
-{{request.args }}
 
 <p class="mb-4">
     This data as {% for name, url in renderers.items() %}<a href="{{ url }}"

@@ -6,7 +6,11 @@
             {% for cell in row %}
             <tr>
                 <th>{{ cell.column }}</th>
+                {% if highlighted_text and cell.column == "text" %}
+                <td class="col-{{ cell.column|to_css_class }}">{{ highlighted_text|safe }}</td>
+                {% else %}
                 <td class="col-{{ cell.column|to_css_class }}">{{ row.display(cell.column) }}</td>
+                {% endif %}
             </tr>
             {% endfor %}
         {% endfor %}
