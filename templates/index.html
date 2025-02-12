@@ -42,7 +42,7 @@ block content %}
     class="title is-3 mt-5 mb-1 has-text-weight-medium"
     style="padding-left: 0.5rem; border-left: 0.5rem solid #{{ database.color }}"
 >
-<a href="/{{database.name}}/search">{{db.queries.search.title}}</a>
+<a href="{{ urls.database(database.name) }}/search">{{db.queries.search.title}}</a>
 </h2>
 <h3 class="subtitle pl-4 mb-1">{{db.queries.search.description}}</h3>
 {% else %}
